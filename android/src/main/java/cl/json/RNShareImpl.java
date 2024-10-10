@@ -155,21 +155,37 @@ public class RNShareImpl implements ActivityEventListener {
         return constants;
     }
 
-    public void open(ReadableMap options, Promise promise) {
-        TargetChosenReceiver.registerCallbacks(promise);
-        try {
-            GenericShare share = new GenericShare(RCTContext);
-            share.open(options);
-        } catch (ActivityNotFoundException ex) {
-            Log.e(NAME,ex.getMessage());
-            ex.printStackTrace(System.out);
-            TargetChosenReceiver.callbackReject("not_available");
-        } catch (Exception e) {
-            Log.e(NAME,e.getMessage());
-            e.printStackTrace(System.out);
-            TargetChosenReceiver.callbackReject(e.getMessage());
+   public void open(ReadableMap options, Promise promise) {
+    TargetChosenReceiver.registerCallbacks(promise);
+    try {
+        GenericShare share = new GenericShare(RCTContext);
+
+        // Retrieve title and message from options
+        String title = options.hasKey("title") ? options.getString("title") : "";
+        String message = options.hasKey("message") ? options.getString("message") : "";
+
+        // Append title to the message for WhatsApp
+        if (title != null && !title.isEmpty()) {
+            message = "**" + title + "**\n\n" + message;  // Formatting title in the message body
         }
+
+        // Modify the options to use the new message
+        WritableMap updatedOptions = Arguments.createMap();
+        updatedOptions.merge(options); // Copy original options
+        updatedOptions.putString("message", message); // Update message
+
+        share.open(updatedOptions); // Pass modified options with formatted message
+    } catch (ActivityNotFoundException ex) {
+        Log.e(NAME, ex.getMessage());
+        ex.printStackTrace(System.out);
+        TargetChosenReceiver.callbackReject("not_available");
+    } catch (Exception e) {
+        Log.e(NAME, e.getMessage());
+        e.printStackTrace(System.out);
+        TargetChosenReceiver.callbackReject(e.getMessage());
     }
+}
+
 
     public void shareSingle(ReadableMap options, Promise promise) {
         TargetChosenReceiver.registerCallbacks(promise);
